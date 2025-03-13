@@ -129,11 +129,12 @@ selected_model <- step(full_model, data = data_mort)
 
 # 4.3 Log-Transformed Model (addressing potential non-linear relationships)
 delta = 1e-8
-log_model <- lm(mortYld ~ log(X1+delta) + log(X2+delta) + log(X3+delta) + log(X4+delta) + log(X5+delta) + log(X6+delta), data = data_mort)
+log_model <- lm(mortYld ~ log(X1+delta) + log(X2+delta) + X3 + X4 + log(X5+delta) + log(X6+delta), data = data_mort)
 
-# 4.4 Stepwise Model Selection to determine best subset of predictors
+# 4.4 Stepwise Model Selection to determine best subset of predictors !!!looks like the best metrics? cooks distance is fucked 
 selected_model_log <- step(log_model, data = data_mort)
-
+summary(selected_model_log)
+plot(selected_model_log, which = 1:4)
 
 #. 4.5 Try interaction model
 
