@@ -3,6 +3,7 @@ output:
   pdf_document:
     citation_package: natbib
     fig_caption: true
+    extra_dependencies: "subfig"
     #template: sv.latex.ms.tex
 title: "Title"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
@@ -25,6 +26,10 @@ header-includes:
   - \usepackage{setspace}
 ---
 
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
 ```{r, include= FALSE, warning=FALSE}
 #citations:
 #have a bib file and then to cite is [@nameofbib]
@@ -39,26 +44,48 @@ library(xtable)  # Load the package
 library(dplyr)
 library(knitr)
 library(kableExtra)
+library(corrplot)
 library(ggplot2)
 library(pastecs)
 library(psych)
 library(lmtest)
 library(graphics)
 library(gridExtra)  # For arranging multiple plots
+library(xtable)
 ```
+
 ### Introduction
 
 ## header
 
 ### Exploratory Data Analysis
 
+The Table 1 summarizes the quantitative measures of the selected factors chosen to model the mortgage yield for new houses. This data contains the average monthly yields from March 1963 to April 1964 for the 18 SMSAs covered in this analysis.
+
+The authors divide the causal factors in three categories: (a) Import needs and transfer cost, (b) Risks and (c) Local market structures. 
+
+Therefore, we will analyse this variables to reason the regression analysis that will follow. 
+
+A. *Import needs and transfer costs*. The uneven distribution of held savings, the differential demand for mortgage funds, and the cost of transferring funds represent the three main components of this category. Column 4 shows that savings per capita vary significantly across SMSAs. However, as illustrated in Fig. 1(d) by the non-linear (flat) relationship and reflected in an r² value of 0.049, this variable explains little of the regional yield variations.
+
+More importantly, 42% and 52% of regional yield differences are explained by variations in demand, represented by population growth and savings per unit built, respectively.
+
+For transfer costs, distance from Boston is used as a measure, given that the city records the lowest yields, and previous studies have shown that mortgage costs rise as one moves south and west. Both the graphical representation in Fig. 1(b) and the r² value of 0.546 highlight the significance of this variable in explaining yield variance.
+
+B. *Risks*. Among all factors, the loan-to-value ratio exhibited the strongest relationship with mortgage yields (r² = 0.654), confirming expectations that higher risk levels correlate with higher yields.
+
+C. *Local Market Structure*. The degree of competition is said to influence financing charges, however the authors found that there was not significance for explaining the mortgage yields, hypothesizing that this is reflected in other variables.
+
+Figure 1 illustrates the scatter plots, revealing a non-linear relationship between the independent variables and mortgage yield, with most exhibiting a log-like pattern. This characteristic was considered in the model development to ensure appropriate transformations and improve model performance.
+
+### Univariate analysis
 
 ```{r, echo=FALSE,warning=FALSE}
 data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
 
+# Fix state names
 data_mort$smsa <- ifelse(data_mort$smsa == "Los Angeles-Long Bea", "Los Angeles-Long Beach", data_mort$smsa)
 data_mort$smsa <- ifelse(data_mort$smsa == "San Francisco-Oaklan", "San Francisco-Oakland", data_mort$smsa)
-
 
 # Compute R² values for each variable in simple regressions
 r2_values <- round(sapply(c("X1", "X2", "X3", "X4", "X5", "X6"), function(var) {
@@ -66,14 +93,22 @@ r2_values <- round(sapply(c("X1", "X2", "X3", "X4", "X5", "X6"), function(var) {
   summary(model)$r.squared
 }), 3)
 
-# Create a vector for the R² row (all values as characters)
-r2_row <- c("Coefficient of determination (r²)", "", as.character(r2_values))
+# Compute Mean ± SD for each variable
+mean_sd_values <- sapply(c("mortYld", "X1", "X2", "X3", "X4", "X5", "X6"), function(var) {
+  mean_val <- mean(data_mort[[var]], na.rm = TRUE)
+  sd_val <- sd(data_mort[[var]], na.rm = TRUE)
+  sprintf("%.1f ± %.1f", mean_val, sd_val)  # Format as "Mean ± SD"
+})
 
-# Create the main table with renamed columns
+# Create rows for Mean ± SD and R² values
+mean_sd_row <- c("Mean ± SD", "", mean_sd_values[-1])  # Skip smsa column
+r2_row <- c("Coefficient of Determination (r²) with MortYld", "", as.character(r2_values))
+
+# Create main table
 table_data <- data_mort %>%
   select(smsa, mortYld, X1, X2, X3, X4, X5, X6) %>%
   rename(
-     State = smsa,
+    SMSA = smsa,
     `Mortgage Yield (%)` = mortYld,
     `Avg Loan/ Mortgage Ratio` = X1,
     `Distance from Boston (miles)` = X2,
@@ -82,35 +117,148 @@ table_data <- data_mort %>%
     `Population Increase 1950-1960 (%)` = X5,
     `% First Mortgage from Inter-regional Banks` = X6
   ) %>%
-  # Convert all columns to character to match the extra row
-  mutate(across(everything(), as.character))
+  mutate(across(everything(), as.character))  # Convert to character for new rows
 
-# Convert r2_row into a one-row data frame
+# Convert rows into data frames
+mean_sd_row_df <- as.data.frame(t(mean_sd_row), stringsAsFactors = FALSE)
 r2_row_df <- as.data.frame(t(r2_row), stringsAsFactors = FALSE)
+
+colnames(mean_sd_row_df) <- colnames(table_data)
 colnames(r2_row_df) <- colnames(table_data)
 
-# Bind the R² row to the main table
-final_table <- bind_rows(table_data, r2_row_df)
-
+# Bind Mean ± SD and R² row to the table
+final_table <- bind_rows(table_data, mean_sd_row_df, r2_row_df)
 
 # Print the final table using knitr::kable
 knitr::kable(final_table, 
-             caption = "Mortgage Yield and Explanatory Variables (Simple Regression Results)", 
-             format = "latex", booktabs = TRUE) %>%
+             caption = "Mortgage Yield and Explanatory Variables (Simple Regression Results and Summary Statistics)", 
+             format = "latex", booktabs = TRUE, align = c("l", rep("c", 7))) %>%
   kable_styling(latex_options = c("scale_down", "hold_position")) %>%
-  column_spec(1, width = "6cm", latex_valign = "m") %>%
-  column_spec(2:8, width = "2cm", latex_valign = "m")
+  column_spec(1, width = "4cm", latex_valign = "m") %>%
+  column_spec(2, width = "1.5cm", latex_valign = "m") %>%
+  column_spec(3:8, width = "2.5cm", latex_valign = "m") %>%
+  row_spec(nrow(final_table) - 1, font_size = 10)  # Reduce font size of Mean ± SD row
 ```
+
+
+```{r scatter, echo=FALSE, fig.cap='Scatter plots with trend lines', fig.subcap=c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)'), warning=FALSE}
+
+
+data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
+
+# List to store ggplot objects
+plot_list <- list()
+
+# Create scatter plots with trend lines
+for (var in c("X1", "X2", "X3", "X4", "X5", "X6")) {
+  p <- ggplot(data_mort, aes_string(x = var, y = "mortYld")) +
+    geom_point(color = "blue") +  # Scatter points
+    geom_smooth(method = "loess", color = "red", size = 1) +  # Trend line
+    labs(title = paste("Mortgage Yield vs", var), x = var, y = "mortYld") +
+    theme_minimal()  # Use minimal theme
+  
+  # Store plot
+  plot_list[[var]] <- p
+}
+
+# Arrange all plots in a 2x3 layout
+grid.arrange(grobs = plot_list, ncol = 3, nrow = 2)
+
+```
+
+
+The histograms reveal that most variables exhibit varying degrees of right skewness. Thus, transformations of this variables may be necessary for statistical modeling to improve normality and interpretability, as discussed later.
+
+```{r histograms, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms"}
+
+data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
+
+# Create a list to store the plots
+plot_list <- list()
+
+for (var in c("X1", "X2", "X3", "X4", "X5", "X6")) {
+  p <- ggplot(data_mort, aes(x = .data[[var]])) +  # Correct column reference
+    geom_histogram(aes(y = ..density..), color = "black", fill = "white", bins = 10) +
+    labs(x = paste("Histogram of", var), y = "Density") +
+    theme_minimal() +
+    stat_function(
+      fun = dnorm, 
+      args = list(mean = mean(data_mort[[var]], na.rm = TRUE), 
+                  sd = sd(data_mort[[var]], na.rm = TRUE)), 
+      colour = "black", linewidth = 1
+    )
+  # Store plot in the list
+  plot_list[[var]] <- p
+}
+
+# Arrange all plots in a 2x3 layout
+grid.arrange(grobs = plot_list, ncol = 3, nrow = 2)
+
+```
+
+
+### Correlation
+
+The scatterplot matrix presents the partial correlations among the six explanatory variables (X1–X6), offering insights into their linear dependencies after controlling for other variables. The lower triangular panel displays bivariate scatterplots with fitted trend lines, illustrating potential nonlinear relationships. The upper triangular panel contains partial correlation coefficients, where values exceeding an absolute value of 0.4 are highlighted in red to denote strong associations. Notably, X3 and X4 exhibit the highest partial correlation (0.9), suggesting a strong linear relationship after adjusting for other variables. This analysis aids in assessing multicollinearity and refining variable selection for subsequent regression modeling.
+
+```{r correlations, echo=FALSE, warning=FALSE, fig.cap= "correlations", fig.align='center'}
+# Partial Correlation Function
+p.cor <- function(x){
+  inv <- solve(var(x))
+  sdi <- diag(1/sqrt(diag(inv)))
+  p.cor.mat <- -(sdi %*% inv %*% sdi)
+  diag(p.cor.mat) <- 1
+  rownames(p.cor.mat) <- colnames(p.cor.mat) <- colnames(x)
+  return(p.cor.mat)
+}
+
+# Compute Partial Correlation Matrix
+partial_cor_matrix <- p.cor(data_mort[, c("X1", "X2", "X3", "X4", "X5", "X6")])
+
+# Find the column index that matches the list of values
+find_column_index <- function(values_list, data_mort) {
+  # Iterate over each column and compare the values
+  for (i in 1:ncol(data_mort)) {
+    if (all(data_mort[, i] == values_list)) {
+      return(i)  # Return the column index if values match
+    }
+  }
+  return(NULL)  # If no column matches, return NULL
+}
+
+
+# Custom panel for upper triangle (displaying partial correlation values)
+panel_cor <- function(x, y, digits = 2, cex.cor = 1.5, ...) {
+  usr <- par("usr"); on.exit(par(usr))  # Save plot settings
+
+  par(usr = c(0, 1, 0, 1))  # Set plot region
+  # Get variable names from x and y
+  index_x = find_column_index(x, data_mort) - 2
+  index_y = find_column_index(y, data_mort) - 2
+  
+  # Extract the partial correlation value from the precomputed matrix
+  r <- partial_cor_matrix[index_x, index_y]
+  
+  # Format the correlation value
+  txt <- format(c(r), digits = digits)[1]
+  
+  # Display the correlation value, with color based on strength
+  text(0.5, 0.5, txt, cex = cex.cor, col = ifelse(abs(r) > 0.4, "red", "blue"))
+}
+
+# Scatterplot matrix with partial correlations
+pairs(data_mort[, c("X1", "X2", "X3", "X4", "X5", "X6")], 
+      lower.panel = panel.smooth,  # Scatterplot in lower
+      upper.panel = panel_cor     # Correlation values in upper
+      )
+```
+
+
 
 ### Model Fitting (Max)
 
-start with full model, that excludes x4 already because of previously said….
-stepwise search → reduced model = mortYld ~X1+ X2+X3 
-analysis of the model:
-std. R table 	
-max plots 
-bp test (homeostaceifyuyri) and reset test (test interaction up to a certain degree)
-
+start with full model, that excludes x4 already because of previously said…. stepwise search → reduced model = mortYld \~X1+ X2+X3 analysis of the model: std. R table\
+max plots bp test (homeostaceifyuyri) and reset test (test interaction up to a certain degree)
 
 ### Discussion of any shortcomings of the final model (Matthew)
 
