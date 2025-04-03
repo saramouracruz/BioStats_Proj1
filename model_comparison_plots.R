@@ -85,6 +85,8 @@ corrplot(partial_cor_matrix, method = "color", type = "upper",
 
 # Compute Variance Inflation Factor (VIF)
 vif_values <- vif(lm(mortYld ~ X1 + X2 + X3 + X4 + X5 + X6, data = data_mort))
+
+
 cat("\nVIF Values:\n")
 print(vif_values)
 
@@ -141,7 +143,7 @@ vif_values_reduced <- vif(selected_reduced_model)
 cat("\nVIF Values:\n")
 print(vif_values)
 
-barplot(vif_values_reduced, col = "skyblue", main = "Variance Inflation Factor (VIF)")
+barplot(vif_values_reduced, col = "skyblue", main = "Variance Inflation Factor (VIF) for reduced model")
 
 
 
@@ -160,6 +162,8 @@ avPlots(selected_reduced_model)  # Look for nonlinear patterns in partial residu
 
 #Implementing polynomial terms
 poly_model <- lm(mortYld ~ X1 + I(X1^2) + X2 + I(X2^2) + X3 + I(X3^2), data = data_mort)
+poly_model <- lm(mortYld ~ I(X1^2) + I(X2^2) + I(X3^2), data = data_mort)
+
 #check_model(poly_model, check = c("all"))
 
 #comparing performance
@@ -229,6 +233,7 @@ p3 <- ggplot(plot_data[plot_data$Metric == "RMSE",], aes(x = Name, y = Value, fi
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_fill_brewer(palette = "Spectral")
 
+
 # Calculate adjusted R² values
 adj_r2 <- c(
   summary(selected_reduced_model)$adj.r.squared,
@@ -236,6 +241,9 @@ adj_r2 <- c(
   summary(log.model.lm)$adj.r.squared,
   summary(log.model.lm1)$adj.r.squared
 )
+
+
+
 
 # Create data frame for adjusted R² values
 adj_r2_df <- data.frame(
@@ -297,7 +305,7 @@ ggplot(data_long, aes(x = mortYld, y = Predicted, color = Model)) +
   ) +
   theme_minimal() +
   scale_color_brewer(palette = "Spectral")
-
+ 
 #-------------------------------
 
 
@@ -305,3 +313,4 @@ check_model(selected_reduced_model, check="all") #stepwise reduced model
 check_model(poly_model, check = "all")  # Polynomial model
 check_model(log.model.lm, check = "all") #Log-response model
 check_model(log.model.lm1, check = "all")  # Log-predictors model
+check_model(log.model.lm1, check = "qq")  # Log-predictors model
