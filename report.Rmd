@@ -260,6 +260,18 @@ pairs(data_mort[, c("X1", "X2", "X3", "X4", "X5", "X6")],
 start with full model, that excludes x4 already because of previously said…. stepwise search → reduced model = mortYld \~X1+ X2+X3 analysis of the model: std. R table\
 max plots bp test (homeostaceifyuyri) and reset test (test interaction up to a certain degree)
 
-### Discussion of any shortcomings of the final model (Matthew)
+### Discussion of any shortcomings of the final model
 
-### Conclusioons (Matthew)
+1. Removal of X4 from consideration
+The introduction of X4 would have led to multicollinearity in the model, which itself leads to less meaningful and less accurate beta predictors. However, there is the possibility that X4 provided some additional information that X3 lacked; such an exclusion would lead to less predictive power and a less accurate model.
+
+2. The nature of the model training
+Standard practice when designing a model involves the testing of said model on a separate dataset. This allows us to conclude that the model is generalizable and is not simply overfit to the dataset used. As such, in the future, we would consider splitting the given data into testing and training sets so as to test and validate the model.
+
+3. Issues with the logarithmic model
+The logarithm of values less than or equal to zero is a forbidden operation. This excludes us from analysing data whose values are zero (e.g., houses in Boston, whose distance from Boston are zero). This resulted in us adding an infinitesimally small delta to allow us to perform this operation and consider these datapoints in our model without skewing the others much. In the future, we would consider what the best course of action would be between: 1. Adding the delta, 2. Removing Boston from consideration, 3. Modifying Boston’s data by inputting the average distance from Boston from all other cities.
+
+
+### Conclusions
+
+In this report, we were able to determine that the model ______ best explains the relationship between home mortgage yields and the variables: mortgage yield, average loan ratio, distance from Boston, savings per new unit built, savings per capita, population increase, and percent of first mortgages from inter-regional banks. This model provided an explanatory value of _____ (R-squared). We must acknowleged, however, that this model is a predictive tool that may contain flaws; some are inherent while others ought to be addressed in future work as outlined above. 

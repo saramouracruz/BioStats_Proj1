@@ -91,7 +91,7 @@ barplot(vif_values, col = "skyblue", main = "Variance Inflation Factor (VIF)")
 
 
 # Explore individual relationships as done in the paper - > how much of the variance
-# is explanied by each variable 
+# is explained by each variable 
 
 r2_values <- c()
 variables <- c("X1", "X2", "X3", "X4", "X5", "X6")
@@ -124,7 +124,7 @@ full_model <- lm(mortYld ~ X1 + X2 + X3 + X4 + X5 + X6, data = data_mort)
 #to remove variables until there is no bigger improvement 
 selected_model <- step(full_model, data = data_mort)
 
-#as mentioned in the paper we can see that there is a more or less log relantionship between
+#as mentioned in the paper we can see that there is a more or less log relationship between
 #independent variable and Xs
 
 # 4.3 Log-Transformed Model (addressing potential non-linear relationships)
@@ -190,7 +190,7 @@ par(mfrow = c(1,1))
 
 # Assuming the selected_model is final, its mathematical form can be written as:
 #   Ȳ = β0̂ + β1̂ * X1 + β3̂ * X3 + β4̂ * X4
-# (Adjust the formula when we decide what the fuck we are chosing)
+# (Adjust the formula when we decide what the fuck we are choosing)
 # Here, Ȳ denotes the predicted Mortgage Yield (%)
 
 final_coef <- round(coef(selected_model), 2)
