@@ -5,12 +5,14 @@ output:
     fig_caption: true
     extra_dependencies: "subfig"
     #template: sv.latex.ms.tex
+    
+    
 title: "Title"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 bibliography: biblio.bib
 biblio-style: apa
-geometry: margin=1in
-fontsize: 11pt 
+geometry: margin=2.5cm
+fontsize: 12pt 
 header-includes:
   - \usepackage{geometry}
   - \geometry{a4paper}
@@ -24,6 +26,19 @@ header-includes:
   - \usepackage{amssymb}
   - \usepackage[running]{lineno}  # Corrected from 'lineo' to 'lineno'
   - \usepackage{setspace}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \usepackage{setspace}
+  - \setlength{\abovecaptionskip}{-3pt} % Adjust space above captions
+  - \setlength{\belowcaptionskip}{-4pt} % Adjust space below captions
+  - \setlength{\textfloatsep}{-7pt} % Adjust space between text and figures
+  - \usepackage{caption}
+  - \captionsetup[figure]{skip=0pt}
+  - \usepackage{titlesec}
+  - \titlespacing*{\section}{0pt}{0pt}{0pt}
+  - \titlespacing*{\subsection}{0pt}{0pt}{0pt}
+  - \titlespacing*{\subsubsection}{0pt}{0pt}{0pt}
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE} 
@@ -35,6 +50,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 #have a bib file and then to cite is [@nameofbib]
 library(readr)
 library(ggplot2)
+library(cowplot)
 library(tidyr)
 library(MASS)  # For stepwise model selection
 library(car)  # For VIF calculation
@@ -52,6 +68,13 @@ library(lmtest)
 library(graphics)
 library(gridExtra)  # For arranging multiple plots
 library(xtable)
+library(gridExtra)
+library(grid)
+library(patchwork)
+library(performance)
+library(viridis)
+library(wesanderson)
+library(lmtest)
 ```
 
 ### Introduction
@@ -79,8 +102,9 @@ C. *Local Market Structure*. The degree of competition is said to influence fina
 Figure 1 illustrates the scatter plots, revealing a non-linear relationship between the independent variables and mortgage yield, with most exhibiting a log-like pattern. This characteristic was considered in the model development to ensure appropriate transformations and improve model performance.
 
 ### Univariate analysis
+\vspace{0.2em}
 
-```{r, echo=FALSE,warning=FALSE}
+```{r, echo=FALSE,warning=FALSE, table.pos="t",fig.pos="h"}
 data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
 
 # Fix state names
@@ -137,11 +161,12 @@ knitr::kable(final_table,
   column_spec(1, width = "4cm", latex_valign = "m") %>%
   column_spec(2, width = "1.5cm", latex_valign = "m") %>%
   column_spec(3:8, width = "2.5cm", latex_valign = "m") %>%
-  row_spec(nrow(final_table) - 1, font_size = 10)  # Reduce font size of Mean ± SD row
+  row_spec(nrow(final_table) - 1, font_size = 10) 
+
 ```
 
-
-```{r scatter, echo=FALSE, fig.cap='Scatter plots with trend lines', fig.subcap=c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)'), warning=FALSE}
+\vspace{-6em}
+```{r scatter, echo=FALSE, fig.cap='Scatter plots with trend lines', warning=FALSE, fig.pos='H', fig.align='center', fig.margin = "1pt",fig.show='hold'}
 
 
 data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
@@ -151,33 +176,46 @@ plot_list <- list()
 
 # Create scatter plots with trend lines
 for (var in c("X1", "X2", "X3", "X4", "X5", "X6")) {
-  p <- ggplot(data_mort, aes_string(x = var, y = "mortYld")) +
+  p_scat <- ggplot(data_mort, aes_string(x = var, y = "mortYld")) +
     geom_point(color = "blue") +  # Scatter points
     geom_smooth(method = "loess", color = "red", size = 1) +  # Trend line
-    labs(title = paste("Mortgage Yield vs", var), x = var, y = "mortYld") +
+    #labs(title = paste("Mortgage Yield vs", var), x = var, y = "mortYld") +
     theme_minimal()  # Use minimal theme
   
   # Store plot
-  plot_list[[var]] <- p
+  plot_list[[var]] <- p_scat
 }
 
 # Arrange all plots in a 2x3 layout
-grid.arrange(grobs = plot_list, ncol = 3, nrow = 2)
+#grid_scat <- grid.arrange(grobs = plot_list, ncol = 3, nrow = 2)
+
+adjusted_plots <- lapply(plot_list, function(plot) {
+  plot + theme(aspect.ratio = 1 / 2) +
+    theme(plot.margin = margin(-0, 0, 0, 0))
+})
+
+# Combine plots in a grid with fixed sizes
+final_patchwork <- wrap_plots(adjusted_plots, ncol = 3, nrow = 2) +
+  plot_layout(guides = "collect") + # Collect legends if any
+  theme(plot.margin = margin(-0, 0, 0, 0)) # Adjust margins if necessary
+
+# Render the patchwork plot
+final_patchwork
 
 ```
 
 
 The histograms reveal that most variables exhibit varying degrees of right skewness. Thus, transformations of this variables may be necessary for statistical modeling to improve normality and interpretability, as discussed later.
-
-```{r histograms, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms"}
+\vspace{-5em}
+```{r histograms, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms",fig.pos='H', ,out.height="80%",fig.align='center'}
 
 data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
 
 # Create a list to store the plots
-plot_list <- list()
+plot_list1 <- list()
 
 for (var in c("X1", "X2", "X3", "X4", "X5", "X6")) {
-  p <- ggplot(data_mort, aes(x = .data[[var]])) +  # Correct column reference
+  p_hist <- ggplot(data_mort, aes(x = .data[[var]]) ) +  # Correct column reference
     geom_histogram(aes(y = ..density..), color = "black", fill = "white", bins = 10) +
     labs(x = paste("Histogram of", var), y = "Density") +
     theme_minimal() +
@@ -187,21 +225,65 @@ for (var in c("X1", "X2", "X3", "X4", "X5", "X6")) {
                   sd = sd(data_mort[[var]], na.rm = TRUE)), 
       colour = "black", linewidth = 1
     )
+  
   # Store plot in the list
-  plot_list[[var]] <- p
+  plot_list1[[var]] <- p_hist
 }
 
 # Arrange all plots in a 2x3 layout
-grid.arrange(grobs = plot_list, ncol = 3, nrow = 2)
+#grid_hist <- grid.arrange(grobs = plot_list1, ncol = 3, nrow = 2, widths = unit(c(2, 2, 2), "null"),
+  #heights = unit(c(1, 1), "null"))
+adjusted_plots <- lapply(plot_list1, function(plot) {
+  plot + theme(aspect.ratio = 1 / 2) # 1:1.5 height-to-width ratio
+})
 
+# Combine plots in a grid with fixed sizes
+final_patchwork <- wrap_plots(adjusted_plots, ncol = 3, nrow = 2) +
+  plot_layout(guides = "collect") + 
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) # Adjust margins if necessary
+
+# Render the patchwork plot
+#final_patchwork
+
+```
+```{r histograms_adj, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms",fig.pos='H', ,fig.align='center', out.height='50%'}
+
+# Arrange the plots in a grid
+adjusted_plots <- lapply(adjusted_plots, function(plot) {
+    plot + theme(plot.margin = margin(-0, -0, -1, -0, "cm"))
+})
+grid_hist <- arrangeGrob(
+  grobs = adjusted_plots,
+  ncol = 3,
+  nrow = 2
+)
+
+# Use a single grid.newpage to handle everything
+grid.newpage()
+pushViewport(viewport(layout = grid.layout(3, 1, heights = unit(c(0.05, 0.9, 0.05), "npc"))))
+
+# Title
+# grid.text("Univariate Graphical Analysis - Histograms",
+#           gp = gpar(fontsize = 14, fontface = "bold"),
+#           vp = viewport(layout.pos.row = 1))
+
+# Main grid
+grid.draw(grid_hist)
+
+# # Caption
+# grid.text("Data source: XYZ Dataset",
+#           gp = gpar(fontsize = 10),
+#           vp = viewport(layout.pos.row = 3))
+
+popViewport()
 ```
 
 
+\vspace{-2em}
 ### Correlation
-
 The scatterplot matrix presents the partial correlations among the six explanatory variables (X1–X6), offering insights into their linear dependencies after controlling for other variables. The lower triangular panel displays bivariate scatterplots with fitted trend lines, illustrating potential nonlinear relationships. The upper triangular panel contains partial correlation coefficients, where values exceeding an absolute value of 0.4 are highlighted in red to denote strong associations. Notably, X3 and X4 exhibit the highest partial correlation (0.9), suggesting a strong linear relationship after adjusting for other variables. This analysis aids in assessing multicollinearity and refining variable selection for subsequent regression modeling.
-
-```{r correlations, echo=FALSE, warning=FALSE, fig.cap= "correlations", fig.align='center'}
+\vspace{-3em}
+```{r correlations, echo=FALSE, warning=FALSE, fig.cap= "correlations", fig.align='center',out.height="80%", out.width="80%"}
 # Partial Correlation Function
 p.cor <- function(x){
   inv <- solve(var(x))
@@ -255,10 +337,302 @@ pairs(data_mort[, c("X1", "X2", "X3", "X4", "X5", "X6")],
 
 
 
-### Model Fitting (Max)
+### Model Fitting
+<!--
+#- We fitted full linear model
+#- Observation VIF, Correl(prev mentioned), R^2(prev mentioned) -> dropping X4 -->
+Due to the high pairwise correlation that we observe for X3 and X4, we begin by initially considering the Variance Inflation factor (VIF) of a linear model that includes all predictors. VIF will be able to quantify how much inflation there is in our linear model due correlations between predictors 
+```{r fig:VIF1, echo=FALSE, warning=FALSE, fig.align='center', fig.width=8, fig.height=4,results='hide',fig.cap=' ', out.height="80%", fig.asp=0.5}
+# Create Barplot
+vif_values <- vif(lm(mortYld ~ X1 + X2 + X3 + X4 + X5 + X6, data = data_mort))
+# Create Barplot
+vif_data <- data.frame(Variable = names(vif_values), VIF = vif_values)
+barplot_grob <- ggplot(vif_data, aes(x = reorder(Variable, -VIF), y = VIF, fill = Variable)) +
+  geom_bar(stat = "identity", show.legend = FALSE, fill="skyblue") +
+  coord_flip() +
+  labs(title = "", x = "Variables", y = "VIF") +
+  theme_minimal() + theme(
+    plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"),  # Add margins to avoid clipping
+  axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate axis text for clarity
+    axis.text.y = element_text(size = 7)  # Reduce text size if needed
+  )
 
-start with full model, that excludes x4 already because of previously said…. stepwise search → reduced model = mortYld \~X1+ X2+X3 analysis of the model: std. R table\
-max plots bp test (homeostaceifyuyri) and reset test (test interaction up to a certain degree)
+
+reduced_model <- lm(mortYld ~ X1 + X2 + X3 + X5 + X6, data = data_mort)
+
+selected_reduced_model <- step(reduced_model, data = data_mort, direction = 'both')
+
+
+# Create Table Using kableExtra
+table_data <- as.data.frame(selected_reduced_model$anova)
+colnames(table_data) <- c("Step", "Df", "Dev", "Resid.Df", "Resid.Dev", "AIC")  # Example column names
+table_grob <- tableGrob(
+  table_data,
+  theme = ttheme_minimal(padding = unit(c(0.1, 0.1), "mm"))
+)
+# Round specific columns
+table_data$Df <- round(table_data$Df, 2)
+table_data$Dev <- round(table_data$Dev, 2)
+table_data$Resid.Df <- round(table_data$Resid.Df, 2)
+table_data$Resid.Dev <- round(table_data$Resid.Dev, 2)
+table_data$AIC <- round(table_data$AIC, 2)
+
+
+table_grob <- tableGrob(
+  table_data,
+  theme = ttheme_default(
+    core = list(
+      fg_params = list(col = "black", fontface = "plain"),
+      bg_params = list(fill = "white", col = "white", lwd = 0)  # No shading and no column borders
+    ),
+    colhead = list(
+      fg_params = list(col = "black", fontface = "bold", cex = 1),
+      bg_params = list(fill = "white", col = "white", lwd = 1)  # Add lines only to header
+    ),
+    rowhead = list(
+      fg_params = list(col = "black", fontface = "italic", cex = 1),
+      bg_params = list(fill = "white", col = "white", lwd = 0)  # No shading for row headers
+    ),
+    padding = unit(c(2, 2), "mm")  # Adjust padding for spacing
+  )
+)
+# Add sub-captions using textGrob for both barplot and table
+barplot_subcap <- textGrob("Figure 4: Variance Inflation Factor (VIF)", gp = gpar(fontsize = 10, fontface = "plain"))
+table_subcap <- textGrob("Table 2: Stepwise Model Selection Path", gp = gpar(fontsize = 10, fontface = "plain"))
+
+# Arrange the Barplot and Table side by side with adjusted widths
+par(mar = c(0, 0, 0, 0))
+grid.arrange(
+  ggplotGrob(barplot_grob), 
+  table_grob, 
+  barplot_subcap,
+  table_subcap,
+  ncol = 2, 
+  widths = c(0.45, 0.45),  # Adjust relative width of barplot and table
+  heights = unit(c(0.8, 0.1, 0.0, 0.0), "npc")  # Add space for captions at the bottom
+)
+# Arrange Barplot and Table Side by Side
+#grid.arrange(ggplotGrob(barplot_grob), table_grob, ncol = 2)
+
+```
+
+
+```{r fig:VIF, echo=FALSE, warning=FALSE, fig.cap = "Full model VIF", fig.align='left', fig.pos='H', results='hide', fig.width=4}
+
+# # Compute Variance Inflation Factor (VIF)
+# vif_values <- vif(lm(mortYld ~ X1 + X2 + X3 + X4 + X5 + X6, data = data_mort))
+# 
+# barplot(vif_values, col = "skyblue")#, main = "Variance Inflation Factor (VIF)")
+# 
+# #cat("\nVIF Values:\n") 
+
+```
+
+
+We see from Figure 4 that the VIF values for X3 and X4 are above the standardly accepted value of 5, supporting the indication from the correlation matrix, implying high multicollinearity. In Table 1, we have the comparisons of adjusted $R^{2}$, and from that we see that X4 has a significantly lower $R^{2}$ than X3. Obersving the results from the correlation matrix, in conjunction with the high VIF values, and the large difference of adjusted $R^{2}$ for X3 and X4, we can conclude  X4 has low explanatory power in our initial model. Meaning that it is in with in a reasonable assumption that we can remove X4 from our model and not have it be detrimental to the model's explanatory power.
+
+<!--- Run stepwise -> model will reduce down to X1, X2, X3 -->
+The next step is to consider a linear model excluding X4:
+$$
+\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{5i} + \beta_5 X_{6i}
+$$
+After selecting our new model, we aim to have a balance of our model's explanatory power and its complexity. To do this we run a stepwise regression on the model. When implemented in R, the process will iteratively add and substract predictors. When considering candidate models in this way, the stepwise regression will aim to minimise AIC, which guides its choice of predictors for the final model. 
+```{r reduced, echo=FALSE, warning=FALSE, fig.cap = "reduced model", fig.align='center',results='hide', fig.pos='h'}
+# reduced_model <- lm(mortYld ~ X1 + X2 + X3 + X5 + X6, data = data_mort)
+# 
+# selected_reduced_model <- step(reduced_model, data = data_mort, direction = 'both')
+# # Shows the path of the stepwise selection
+# #selected_reduced_model$anova
+```
+
+```{r removed, echo=FALSE, warning=FALSE, table.pos='h',table.width=4,table.align='right'}
+# kable(selected_reduced_model$anova, 
+#       caption = "Stepwise model selection path", 
+#       digits = 3, 
+#       format = "latex",booktabs = TRUE) %>%
+#   kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed", "responsive"), position = "center")
+
+```
+What we observe from Table 2, is that the stepwise regression process determined that removing X5 and X6 from our model, minimizes the AIC. This results in an optimized linear model of:
+$$
+\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i}
+$$
+<!-- - Reiterate non linear observations -->
+Now that we have our reduced model, we can focus in on the remaining predictors. As was shown previously in Figure 1, X1, X2, and X3 have seemingly non linear relationships with the mortgage yield. This would indicate that applying a non linear transform to our model, could potentially lead to improved fitting. We chose to consider three potential transforms, namely polynomial transform of the order 2:
+$$
+\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{1i}^2 + \beta_5 X_{2i}^2 + \beta_6 X_{3i}^2 
+$$
+A Log of the response(mortgage yield):
+$$
+\log(\text{mortYld}_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} 
+$$
+and lastly the log of the predictors:
+$$
+\text{mortYld}_i = \beta_0 + \beta_1 \log(X_{1i}) + \beta_2 \log(X_{2i}) + \beta_3 \log(X_{3i})
+$$
+<!--- - RESET Test -> exlcude polynomial -->
+Prior to model comparisons, we can perform a Ramsey RESET test. This will allow us to determine whether additional polynomial terms will add explanatory power. In R implementation, the RESET test will implement a standard F-test, to determine whether the additional polynomial terms have significant value. Our RESET test resulted in a $p=0.3$, indicating that an inclusion of polynomial terms offers no increased model fitting. This will allows to exclude the polynomial model in the further analysis.
+```{r , echo=FALSE, warning=FALSE, results='hide'}
+reset_result <- resettest(selected_reduced_model, power = 2:3, type = "fitted")
+#print(reset_result)
+```
+
+
+<!--- - Apply non linear transformations(LOG) --->
+```{r nonlin,echo=FALSE, warning=FALSE, results='hide'}
+#Implementing log model on outcome
+log_model_outcome <- log(mortYld) ~ X1 + X2 + X3
+log.model.lm <- lm(log_model_outcome, data = data_mort)
+summary(log.model.lm)
+
+#Log model on predictors
+delta = 1e-16
+log_model1 <- mortYld ~ log(X1) + log(X2+delta) + log(X3)
+log.model.lm1 <- lm(log_model1, data = data_mort)
+summary(log.model.lm1)
+```
+
+<!--- - Look at model comaprison metrics --->
+
+```{r com_plots, echo=FALSE, warning=FALSE, fig.align='center',results='hide', fig.pos='h'}
+# List of models
+models <- list(
+  "Reduced" = selected_reduced_model,
+  "Log-Response" = log.model.lm,
+  "Log-Predictors" = log.model.lm1
+)
+
+# Create performance comparison table
+model_metrics <- compare_performance(models, metrics = c("AIC", "BIC", "R2", "Adj_R2", "RMSE"))
+print(model_metrics)
+
+
+# Melt metrics for plotting
+plot_data <- model_metrics %>%
+  pivot_longer(cols = c(AIC, BIC, RMSE), names_to = "Metric", values_to = "Value")
+
+# Plot AIC values separately
+p1 <- ggplot(plot_data[plot_data$Metric == "AIC",], aes(x = Name, y = Value, fill = Name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(Value, 2)), vjust = -0.5, size = 2.5, color = "white") +
+  labs(title = "AIC Values for All Models", y = "AIC Value", x = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = wes_palette("Zissou1", n = 3,type='continuous')) + theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8), 
+    axis.text.y = element_text(size = 8),  
+    axis.title.x = element_text(size = 10), 
+    axis.title.y = element_text(size = 10),  
+    plot.title = element_text(size = 12),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 10)
+  )
+
+# Plot BIC values separately
+p2 <- ggplot(plot_data[plot_data$Metric == "BIC",], aes(x = Name, y = Value, fill = Name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(Value, 2)), vjust = -0.5, size = 2.5, color = "white") +
+  labs(title = "BIC Values for All Models", y = "BIC Value", x = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = wes_palette("Zissou1", n = 3,type='continuous')) + theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8), 
+    axis.text.y = element_text(size = 8),  
+    axis.title.x = element_text(size = 10), 
+    axis.title.y = element_text(size = 10),  
+    plot.title = element_text(size = 12),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 10)
+  )
+
+# Plot RMSE values separately
+p3 <- ggplot(plot_data[plot_data$Metric == "RMSE",], aes(x = Name, y = Value, fill = Name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(Value, 2)), vjust = 1.6, size = 2.5, color = "white") +
+  labs(title = "RMSE Values for All Models", y = "RMSE", x = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = wes_palette("Zissou1", n = 3,type='continuous')) + theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8), 
+    axis.text.y = element_text(size = 8),  
+    axis.title.x = element_text(size = 10), 
+    axis.title.y = element_text(size = 10),  
+    plot.title = element_text(size = 12),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 10)
+  )
+
+
+# Calculate adjusted R² values
+adj_r2 <- c(
+  summary(selected_reduced_model)$adj.r.squared,
+  summary(log.model.lm)$adj.r.squared,
+  summary(log.model.lm1)$adj.r.squared
+)
+
+# Create data frame for adjusted R² values
+adj_r2_df <- data.frame(
+  Name = c("Reduced", "Log-Response", "Log-Predictors"),
+  Adj_R2 = adj_r2
+)
+
+# Merge AIC and adjusted R² results
+#comparison_df <- merge(aic_df, adj_r2_df, by = "Model", all = TRUE)
+
+# Plot Adjusted R^2
+#pal <- wes_palette("Zissou1", 3, type = "continuous")
+p4 <- ggplot(adj_r2_df, aes(x = Name, y = Adj_R2, fill = Name)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(Adj_R2, 2)), vjust = 2, size = 2.5, color = "white") +
+  labs(title = expression(paste("Adjusted ",R^2," for All Models")), y = expression(paste("Adjusted ",R^2)), x = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  #scale_fill_viridis(discrete = TRUE) + 
+  scale_fill_manual(values = wes_palette("Zissou1", n = 3,type='continuous')) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8), 
+    axis.text.y = element_text(size = 8),  
+    axis.title.x = element_text(size = 10), 
+    axis.title.y = element_text(size = 10),  
+    plot.title = element_text(size = 12),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 10)
+  )
+
+
+
+```
+
+```{r Model_metrics,echo=FALSE, warning=FALSE, fig.cap='Metrics for Model Comparisons'}
+(p1 + p2)/
+(p3 + p4)
+```
+
+<!--- - Conclude on best model --->
+
+<!--- - Final summary plots of best model --->
+
+```{r ,echo=FALSE, warning=FALSE, fig.align='center',results='hide', fig.cap='Diagnostic plots for the final model'}
+# plot(compare_performance(selected_reduced_model,log.model.lm,log.model.lm1, rank = TRUE, verbose = FALSE))
+# First extract the diagnostic plots
+# Generate and modify plots in ONE STEP to prevent duplicates
+# Generate and modify plots in ONE code chunk
+check_model(log.model.lm1, check = c("qq", "ncv", "vif", "outliers")) |>
+  plot() &  # Use & to apply themes globally
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 9, margin = margin(b = 2)),
+    plot.subtitle = element_text(hjust = 0.5, size = 7),
+    plot.margin = margin(5, 5, 5, 5)  # Add spacing between subplots
+  )
+
+```
+<!--- - BP test --->
+```{r}
+bp_test_result <- bptest(log.model.lm1)
+print(bp_test_result)
+```
+
+
 
 ### Discussion of any shortcomings of the final model
 
