@@ -603,7 +603,7 @@ p4 <- ggplot(adj_r2_df, aes(x = Name, y = Adj_R2, fill = Name)) +
 
 ```
 
-```{r Model_metrics,echo=FALSE, warning=FALSE, fig.cap='Metrics for Model Comparisons'}
+```{r Model_metrics,echo=FALSE, warning=FALSE, fig.cap='Metrics for Model Comparisons',fig.align='center',out.height="80%", out.width="80%"}
 (p1 + p2)/
 (p3 + p4)
 ```
@@ -617,15 +617,53 @@ p4 <- ggplot(adj_r2_df, aes(x = Name, y = Adj_R2, fill = Name)) +
 # First extract the diagnostic plots
 # Generate and modify plots in ONE STEP to prevent duplicates
 # Generate and modify plots in ONE code chunk
-check_model(log.model.lm1, check = c("qq", "ncv", "vif", "outliers")) |>
-  plot() &  # Use & to apply themes globally
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 9, margin = margin(b = 2)),
-    plot.subtitle = element_text(hjust = 0.5, size = 7),
-    plot.margin = margin(5, 5, 5, 5)  # Add spacing between subplots
-  )
+# check_model(log.model.lm1, check = c("qq", "ncv", "vif", "outliers")) |>
+#   plot() &  # Use & to apply themes globally
+#   theme(
+#     plot.title = element_text(hjust = 0.5, size = 9, margin = margin(b = 2)),
+#     plot.subtitle = element_text(hjust = 0.5, size = 7),
+#     plot.margin = margin(5, 5, 5, 5)  # Add spacing between subplots
+#   )
 
 ```
+
+```{r,echo=FALSE, warning=FALSE, fig.align='center',results='hide'}
+x <- log.model.lm1  # Your model
+
+mode_ <- function(model) {
+  # Run check_model on the provided model with the specified checks.
+  check_model(model)#, check = c("qq", "ncv", "outliers"))
+  # Return the model invisibly.
+  invisible(model)
+}
+
+# Now call the function on your model x
+```
+
+
+```{r ,echo=FALSE, warning=FALSE, fig.align='center',results='hide',fig.cap='Diagnostic plots for the final model', out.height="80%", out.width="80%"}
+# g <- ggplotGrob(plot(mode_(x)))
+# g$layout
+layout(matrix(1:4,ncol=2))
+pp <- plot(mode_(x)) & theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8), 
+    axis.text.y = element_text(size = 1),  
+    axis.title.x = element_text(size = 1), 
+    axis.title.y = element_text(size = 10),  
+    plot.title = element_text(size = 12),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 10)
+  )
+
+# &  # Use & to apply themes globally
+#   theme(
+#     plot.title = element_text(hjust = 0.5, size = 9, margin = margin(b = 2)),
+#     plot.subtitle = element_text(hjust = 0.5, size = 7),
+#     plot.margin = margin(5, 5, 5, 5)  # Add spacing between subplots
+#   )
+```
+
+
 <!--- - BP test --->
 ```{r}
 bp_test_result <- bptest(log.model.lm1)
