@@ -7,13 +7,20 @@ output:
     #template: sv.latex.ms.tex
     
     
-title: "Title"
+title: "Linear Regression Modelling of Mortgage Yield"
+subtitle: "Cruz, Fennessy, Grobbelaar, Volpatti"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 bibliography: biblio.bib
 biblio-style: apa
-geometry: margin=2.5cm
+geometry: margin=2.6cm
 fontsize: 12pt 
 header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhf{}
+  - \lhead{Cruz, Fennessy, Grobbelaar, Volpatti}
+  #- \rhead{\thepage}
+  - \setlength{\headheight}{15pt}                         # Adjust header height if needed
   - \usepackage{geometry}
   - \geometry{a4paper}
   - \usepackage[numbers]{natbib}
@@ -24,14 +31,13 @@ header-includes:
   - \usepackage{gensymb}
   - \usepackage{amsmath}
   - \usepackage{amssymb}
-  - \usepackage[running]{lineno}  # Corrected from 'lineo' to 'lineno'
+  - \usepackage[running]{lineno}
   - \usepackage{setspace}
   - \usepackage{float}
   - \floatplacement{figure}{H}
-  - \usepackage{setspace}
-  - \setlength{\abovecaptionskip}{-3pt} % Adjust space above captions
-  - \setlength{\belowcaptionskip}{-4pt} % Adjust space below captions
-  - \setlength{\textfloatsep}{-7pt} % Adjust space between text and figures
+  - \setlength{\abovecaptionskip}{-3pt}
+  - \setlength{\belowcaptionskip}{-4pt}
+  - \setlength{\textfloatsep}{-7pt}
   - \usepackage{caption}
   - \captionsetup[figure]{skip=0pt}
   - \usepackage{titlesec}
@@ -79,7 +85,19 @@ library(lmtest)
 
 ### Introduction
 
-## header
+The role of a mortgage lender relies significantly on their mortgage yield, that is, the effective return earned from offering a mortgage for a house. Several factors play into forecasting this metric, not least the region that the house has been built in, and the financial profile of that area's residents. In this assignment, new home mortgage yields for 18 SMSAs (Standard Metropolitan Statistical Areas) are predicted from a series of financial and geographic features:
+
+\begin{itemize}
+    \item Average Loan/Mortgage Ratio  High values ==> Low Down Payments   (X1)
+    \item Distance from Boston in miles  (X2)
+    \item Savings per new unit built   (X3)
+    \item Savings per capita   (X4)
+    \item Pop inc 1950-1960 in %   (X5)
+    \item Percent of first mortgage from inter-regional banks  (X6)
+\end{itemize}
+
+Initially, the features and correlations between them are investigated, offering insights into the subsequent linear regression model. The exploratory data analysis will offer insights into interpreting the performance of the final model, which aims to accurately predict the mortgage yield (%). 
+
 
 ### Exploratory Data Analysis
 
@@ -166,7 +184,7 @@ knitr::kable(final_table,
 ```
 
 \vspace{-6em}
-```{r scatter, echo=FALSE, fig.cap='Scatter plots with trend lines', warning=FALSE, fig.pos='H', fig.align='center', fig.margin = "1pt",fig.show='hold'}
+```{r scatter, echo=FALSE, warning=FALSE, fig.pos='H', fig.align='center', fig.margin = "0pt", fig.cap='Scatter plots with trend lines'}
 
 
 data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
@@ -180,7 +198,8 @@ for (var in c("X1", "X2", "X3", "X4", "X5", "X6")) {
     geom_point(color = "blue") +  # Scatter points
     geom_smooth(method = "loess", color = "red", size = 1) +  # Trend line
     #labs(title = paste("Mortgage Yield vs", var), x = var, y = "mortYld") +
-    theme_minimal()  # Use minimal theme
+    theme_minimal()  +
+    theme(plot.margin = margin(-0, 0, 0, 0))
   
   # Store plot
   plot_list[[var]] <- p_scat
@@ -206,7 +225,7 @@ final_patchwork
 
 
 The histograms reveal that most variables exhibit varying degrees of right skewness. Thus, transformations of this variables may be necessary for statistical modeling to improve normality and interpretability, as discussed later.
-\vspace{-5em}
+\vspace{-3em}
 ```{r histograms, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms",fig.pos='H', ,out.height="80%",fig.align='center'}
 
 data_mort <- read.csv("http://users.stat.ufl.edu/~winner/data/myield.csv")
@@ -246,7 +265,9 @@ final_patchwork <- wrap_plots(adjusted_plots, ncol = 3, nrow = 2) +
 #final_patchwork
 
 ```
-```{r histograms_adj, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms",fig.pos='H', ,fig.align='center', out.height='50%'}
+
+
+```{r histograms_adj, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms",fig.pos='H', ,fig.align='center', out.height="80%", out.width="80%"}
 
 # Arrange the plots in a grid
 adjusted_plots <- lapply(adjusted_plots, function(plot) {
@@ -342,7 +363,7 @@ pairs(data_mort[, c("X1", "X2", "X3", "X4", "X5", "X6")],
 #- We fitted full linear model
 #- Observation VIF, Correl(prev mentioned), R^2(prev mentioned) -> dropping X4 -->
 Due to the high pairwise correlation that we observe for X3 and X4, we begin by initially considering the Variance Inflation factor (VIF) of a linear model that includes all predictors. VIF will be able to quantify how much inflation there is in our linear model due correlations between predictors 
-```{r fig:VIF1, echo=FALSE, warning=FALSE, fig.align='center', fig.width=8, fig.height=4,results='hide',fig.cap=' ', out.height="80%", fig.asp=0.5}
+```{r fig:VIF1, echo=FALSE, warning=FALSE, fig.align='center', fig.width=8, fig.height=4,results='hide',fig.cap=' ', out.height="90%", out.width="90%", fig.asp=0.5}
 # Create Barplot
 vif_values <- vif(lm(mortYld ~ X1 + X2 + X3 + X4 + X5 + X6, data = data_mort))
 # Create Barplot
@@ -434,7 +455,7 @@ We see from Figure 4 that the VIF values for X3 and X4 are above the standardly 
 <!--- Run stepwise -> model will reduce down to X1, X2, X3 -->
 The next step is to consider a linear model excluding X4:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{5i} + \beta_5 X_{6i}
+\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{5i} + \beta_5 X_{6i} \tag{1}
 $$
 After selecting our new model, we aim to have a balance of our model's explanatory power and its complexity. To do this we run a stepwise regression on the model. When implemented in R, the process will iteratively add and substract predictors. When considering candidate models in this way, the stepwise regression will aim to minimise AIC, which guides its choice of predictors for the final model. 
 ```{r reduced, echo=FALSE, warning=FALSE, fig.cap = "reduced model", fig.align='center',results='hide', fig.pos='h'}
@@ -455,23 +476,26 @@ After selecting our new model, we aim to have a balance of our model's explanato
 ```
 What we observe from Table 2, is that the stepwise regression process determined that removing X5 and X6 from our model, minimizes the AIC. This results in an optimized linear model of:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i}
+\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} \tag{2}
 $$
 <!-- - Reiterate non linear observations -->
 Now that we have our reduced model, we can focus in on the remaining predictors. As was shown previously in Figure 1, X1, X2, and X3 have seemingly non linear relationships with the mortgage yield. This would indicate that applying a non linear transform to our model, could potentially lead to improved fitting. We chose to consider three potential transforms, namely polynomial transform of the order 2:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{1i}^2 + \beta_5 X_{2i}^2 + \beta_6 X_{3i}^2 
+\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{1i}^2 + \beta_5 X_{2i}^2 + \beta_6 X_{3i}^2 \tag{3}
 $$
 A Log of the response(mortgage yield):
 $$
-\log(\text{mortYld}_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} 
+\log(\text{mortYld}_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} \tag{4}
 $$
 and lastly the log of the predictors:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 \log(X_{1i}) + \beta_2 \log(X_{2i}) + \beta_3 \log(X_{3i})
+\text{mortYld}_i = \beta_0 + \beta_1 \log(X_{1i}) + \beta_2 \log(X_{2i}) + \beta_3 \log(X_{3i}) \tag{5}
 $$
 <!--- - RESET Test -> exlcude polynomial -->
 Prior to model comparisons, we can perform a Ramsey RESET test. This will allow us to determine whether additional polynomial terms will add explanatory power. In R implementation, the RESET test will implement a standard F-test, to determine whether the additional polynomial terms have significant value. Our RESET test resulted in a $p=0.3$, indicating that an inclusion of polynomial terms offers no increased model fitting. This will allows to exclude the polynomial model in the further analysis.
+<!--- - Conclude on best model --->
+\\
+Now that we have restricted our models to the initial reduced linear model (Eq. 2), the log of the response (Eq. 4), and the log of the predictors (Eq. 5), we evaluate the performance of these models against each other. We do this by looking at the AIC, BIC, RMSE, and Adjusted $R^2$. We can see the comparisons in Figure. 5, where we observe that the Log-Predictors model out performs the other two models in majority of the metrics. From the AIC and BIC, the lower values for Log-Predictors indicate that it optimizes model fitting and complexity better than the reduced and Log-Response. For RMSE, Log-Response out performs the other two, while for Adjusted $R^2$ Log-Predictors performs the best again. 
 ```{r , echo=FALSE, warning=FALSE, results='hide'}
 reset_result <- resettest(selected_reduced_model, power = 2:3, type = "fitted")
 #print(reset_result)
@@ -602,15 +626,16 @@ p4 <- ggplot(adj_r2_df, aes(x = Name, y = Adj_R2, fill = Name)) +
 
 
 ```
-
+\vspace{-2cm}
 ```{r Model_metrics,echo=FALSE, warning=FALSE, fig.cap='Metrics for Model Comparisons',fig.align='center',out.height="80%", out.width="80%"}
 (p1 + p2)/
 (p3 + p4)
 ```
 
-<!--- - Conclude on best model --->
+From these metrics, we can see that the Log-Predictors model is most suitable for modeling Mortgage Yield. Log-Response might perform best in prediction power (RMSE), but the magnitude of difference when compared to Mortgage Yield values is low, supporting then the decision to go with Log-Predictors.
 
 <!--- - Final summary plots of best model --->
+Now that we have selected the Log-Predictors as the best candidate model, we can evaluate it by looking at four diagnostic plots in Figure 6 (Residuals vs Fitted, Scale-Location, Q-Q Residuals, and Residuals vs Leverage). In the Residuals vs Fitted plot we want to look for a horizontal red line, indicating that as we add predictors we still remain with overall constant variance. In our model we can see some curvelinear trend, however, the scale of variation is relatively low around -0.2 to +0.1. 
 
 ```{r ,echo=FALSE, warning=FALSE, fig.align='center',results='hide', fig.cap='Diagnostic plots for the final model'}
 # plot(compare_performance(selected_reduced_model,log.model.lm,log.model.lm1, rank = TRUE, verbose = FALSE))
@@ -640,7 +665,7 @@ mode_ <- function(model) {
 # Now call the function on your model x
 ```
 
-
+\vspace{-1cm}
 ```{r ,echo=FALSE, warning=FALSE, fig.align='center',results='hide',fig.cap='Diagnostic plots for the final model', out.height="80%", out.width="80%"}
 # g <- ggplotGrob(plot(mode_(x)))
 # g$layout
@@ -663,9 +688,9 @@ pp <- plot(mode_(x)) & theme(
 #   )
 ```
 
-
+Scale-Location aims to again asses the spread variance of with predictors. The downward trend of the plot could indicate variance spread. From the Q-Q plot, we can see that the residuals follow the reference line. This is a positive sign for our model, and indicates that the assumption that residuals should follow a normal distribution is satisfied for our model. This implies that hypothesis tests with our model should have high reliability. The Residuals vs Leverage plot is to investigate how influential certain observations are. We can check this by noting if the points are falling within the Cooks distance contour lines. What we observe is that while we have a single observation outside, the remaining points are all within a reasonable range, indicating general model stability. Due to some of homoscedasticity we saw, we decided to run a Breusch-Pagan test (BP test) to validate whether it should be of concern. From the BP test we obtained values of  BP = 0.92096, and p-value = 0.8204, indicating that we do not have heteroscedasticity.
 <!--- - BP test --->
-```{r}
+```{r ,echo=FALSE, warning=FALSE, fig.align='center',results='hide'}
 bp_test_result <- bptest(log.model.lm1)
 print(bp_test_result)
 ```
@@ -686,4 +711,4 @@ The logarithm of values less than or equal to zero is a forbidden operation. Thi
 
 ### Conclusions
 
-In this report, we were able to determine that the model ______ best explains the relationship between home mortgage yields and the variables: mortgage yield, average loan ratio, distance from Boston, savings per new unit built, savings per capita, population increase, and percent of first mortgages from inter-regional banks. This model provided an explanatory value of _____ (R-squared). We must acknowleged, however, that this model is a predictive tool that may contain flaws; some are inherent while others ought to be addressed in future work as outlined above. 
+In this report, we were able to determine that the Log-Predictors model best explains the relationship between home mortgage yields and the variables: mortgage yield, average loan ratio, distance from Boston, savings per new unit built, savings per capita, population increase, and percent of first mortgages from inter-regional banks. We must acknowleged, however, that this model is a predictive tool that may contain flaws; some are inherent while others ought to be addressed in future work as outlined above. 
