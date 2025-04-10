@@ -41,9 +41,9 @@ header-includes:
   - \usepackage{caption}
   - \captionsetup[figure]{skip=0pt}
   - \usepackage{titlesec}
-  - \titlespacing*{\section}{0pt}{0pt}{0pt}
-  - \titlespacing*{\subsection}{0pt}{0pt}{0pt}
-  - \titlespacing*{\subsubsection}{0pt}{0pt}{0pt}
+  - \titlespacing*{\section}{0pt}{10pt}{1pt}
+  - \titlespacing*{\subsection}{0pt}{10pt}{1pt}
+  - \titlespacing*{\subsubsection}{0pt}{10pt}{1pt}
 always_allow_html: true
 ---
 
@@ -82,6 +82,8 @@ library(viridis)
 library(wesanderson)
 library(lmtest)
 ```
+
+\vspace{-0.5cm} 
 
 ### Introduction
 
@@ -699,16 +701,15 @@ print(bp_test_result)
 
 ### Discussion of any shortcomings of the final model
 
-1. Removal of X4 from consideration
-The introduction of X4 would have led to multicollinearity in the model, which itself leads to less meaningful and less accurate beta predictors. However, there is the possibility that X4 provided some additional information that X3 lacked; such an exclusion would lead to less predictive power and a less accurate model.
+1. *Removal of X4 from consideration:* The introduction of X4 would have led to multicollinearity in the model, which itself leads to less meaningful and less accurate beta predictors. However, there is the possibility that X4 provided some additional information that X3 lacked; such an exclusion would lead to less predictive power and a less accurate model.
 
-2. The nature of the model training
-Standard practice when designing a model involves the testing of said model on a separate dataset. This allows us to conclude that the model is generalizable and is not simply overfit to the dataset used. As such, in the future, we would consider splitting the given data into testing and training sets so as to test and validate the model.
+2. *The nature of the model training:* Standard practice when designing a model involves the testing of said model on a separate dataset. This allows us to conclude that the model is generalizable and is not simply overfit to the dataset used. As such, in the future, we would consider splitting the given data into testing and training sets so as to test and validate the model.
 
-3. Issues with the logarithmic model
-The logarithm of values less than or equal to zero is a forbidden operation. This excludes us from analysing data whose values are zero (e.g., houses in Boston, whose distance from Boston are zero). This resulted in us adding an infinitesimally small delta to allow us to perform this operation and consider these datapoints in our model without skewing the others much. In the future, we would consider what the best course of action would be between: 1. Adding the delta, 2. Removing Boston from consideration, 3. Modifying Boston’s data by inputting the average distance from Boston from all other cities.
+3. *Issues with the logarithmic model:* The logarithm of values less than or equal to zero is a forbidden operation. This excludes us from analysing data whose values are zero (e.g., houses in Boston, whose distance from Boston are zero). This resulted in us adding an infinitesimally small delta to allow us to perform this operation and consider these datapoints in our model without skewing the others much. In the future, we would consider what the best course of action would be between: 1. Adding the delta, 2. Removing Boston from consideration, 3. Modifying Boston’s data by inputting the average distance from Boston from all other cities.
 
 
 ### Conclusions
 
-In this report, we were able to determine that the Log-Predictors model best explains the relationship between home mortgage yields and the variables: mortgage yield, average loan ratio, distance from Boston, savings per new unit built, savings per capita, population increase, and percent of first mortgages from inter-regional banks. We must acknowleged, however, that this model is a predictive tool that may contain flaws; some are inherent while others ought to be addressed in future work as outlined above. 
+This report found that the log-transformed response model, using average loan-to-value ratio (X1), distance from Boston (X2), and savings per new unit built (X3), best explains mortgage yield variation across 18 SMSAs. This model was selected through stepwise regression and evaluated using AIC, BIC, RMSE, and adjusted R2, achieving an adjusted R2 of 0.80.
+While statistically sound, the model has limitations—most notably, the exclusion of X4 due to multicollinearity, the absence of a test set for validation, and the need to adjust zero values for log transformation. These limitations suggest areas for refinement.
+Despite this, the final model offers strong predictive utility and provides insight into the key economic and geographic factors affecting mortgage yields.
