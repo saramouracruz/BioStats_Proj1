@@ -457,7 +457,7 @@ We see from Figure 4 that the VIF values for X3 and X4 are above the standardly 
 <!--- Run stepwise -> model will reduce down to X1, X2, X3 -->
 The next step is to consider a linear model excluding X4:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{5i} + \beta_5 X_{6i} \tag{1}
+\widehat{\text{mortYld}}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{5i} + \beta_5 X_{6i} \tag{1}
 $$
 After selecting our new model, we aim to have a balance of our model's explanatory power and its complexity. To do this we run a stepwise regression on the model. When implemented in R, the process will iteratively add and substract predictors. When considering candidate models in this way, the stepwise regression will aim to minimise AIC, which guides its choice of predictors for the final model. 
 ```{r reduced, echo=FALSE, warning=FALSE, fig.cap = "reduced model", fig.align='center',results='hide', fig.pos='h'}
@@ -478,20 +478,20 @@ After selecting our new model, we aim to have a balance of our model's explanato
 ```
 What we observe from Table 2, is that the stepwise regression process determined that removing X5 and X6 from our model, minimizes the AIC. This results in an optimized linear model of:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} \tag{2}
+\widehat{\text{mortYld}}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} \tag{2}
 $$
 <!-- - Reiterate non linear observations -->
 Now that we have our reduced model, we can focus in on the remaining predictors. As was shown previously in Figure 1, X1, X2, and X3 have seemingly non linear relationships with the mortgage yield. This would indicate that applying a non linear transform to our model, could potentially lead to improved fitting. We chose to consider three potential transforms, namely polynomial transform of the order 2:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{1i}^2 + \beta_5 X_{2i}^2 + \beta_6 X_{3i}^2 \tag{3}
+\widehat{\text{mortYld}}_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{1i}^2 + \beta_5 X_{2i}^2 + \beta_6 X_{3i}^2 \tag{3}
 $$
 A Log of the response(mortgage yield):
 $$
-\log(\text{mortYld}_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} \tag{4}
+\log(\widehat{\text{mortYld}}_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} \tag{4}
 $$
 and lastly the log of the predictors:
 $$
-\text{mortYld}_i = \beta_0 + \beta_1 \log(X_{1i}) + \beta_2 \log(X_{2i}) + \beta_3 \log(X_{3i}) \tag{5}
+\widehat{\text{mortYld}}_i = \beta_0 + \beta_1 \log(X_{1i}) + \beta_2 \log(X_{2i}) + \beta_3 \log(X_{3i}) \tag{5}
 $$
 <!--- - RESET Test -> exlcude polynomial -->
 Prior to model comparisons, we can perform a Ramsey RESET test. This will allow us to determine whether additional polynomial terms will add explanatory power. In R implementation, the RESET test will implement a standard F-test, to determine whether the additional polynomial terms have significant value. Our RESET test resulted in a $p=0.3$, indicating that an inclusion of polynomial terms offers no increased model fitting. This will allows to exclude the polynomial model in the further analysis.
