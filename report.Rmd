@@ -87,7 +87,7 @@ library(lmtest)
 
 ### Introduction
 
-The role of a mortgage lender relies significantly on their mortgage yield, that is, the effective return earned from offering a mortgage for a house. Several factors play into forecasting this metric, not least the region that the house has been built in, and the financial profile of that area's residents. In this assignment, new home mortgage yields for 18 SMSAs (Standard Metropolitan Statistical Areas) are predicted from a series of financial and geographic features:
+The role of a mortgage lender relies significantly on their mortgage yield, that is, the effective return earned from offering a mortgage for a house. Several factors play into forecasting this metric, not least the region that the house has been built in, and the financial profile of that area's residents. In this assignment, we build off of the work of Schaaf et al. in 1966 [1]. In their work, new home mortgage yields for 18 SMSAs (Standard Metropolitan Statistical Areas) are predicted from a series of financial and geographic features:
 
 \begin{itemize}
     \item Average Loan/Mortgage Ratio  High values ==> Low Down Payments   (X1)
@@ -713,3 +713,8 @@ print(bp_test_result)
 This report found that the log-transformed response model, using average loan-to-value ratio (X1), distance from Boston (X2), and savings per new unit built (X3), best explains mortgage yield variation across 18 SMSAs. This model was selected through stepwise regression and evaluated using AIC, BIC, RMSE, and adjusted R2, achieving an adjusted R2 of 0.80.
 While statistically sound, the model has limitations—most notably, the exclusion of X4 due to multicollinearity, the absence of a test set for validation, and the need to adjust zero values for log transformation. These limitations suggest areas for refinement.
 Despite this, the final model offers strong predictive utility and provides insight into the key economic and geographic factors affecting mortgage yields.
+
+
+### References
+
+[1] A.H. Schaaf (1966). "Regional Differences in Mortgage Financing Costs", Journal of Finance, Vol. 21, pp.85-94.
