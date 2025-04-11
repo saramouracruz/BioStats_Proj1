@@ -185,6 +185,8 @@ knitr::kable(final_table,
 
 ```
 
+The histograms below reveal that most variables exhibit varying degrees of right skewness. Thus, transformations of this variables may be necessary for statistical modeling to improve normality and interpretability, as discussed later.
+
 \vspace{-6em}
 ```{r scatter, echo=FALSE, warning=FALSE, fig.pos='H', fig.align='center', fig.margin = "0pt", fig.cap='Scatter plots with trend lines'}
 
@@ -225,8 +227,6 @@ final_patchwork
 
 ```
 
-
-The histograms reveal that most variables exhibit varying degrees of right skewness. Thus, transformations of this variables may be necessary for statistical modeling to improve normality and interpretability, as discussed later.
 \vspace{-3em}
 ```{r histograms, echo=FALSE, warning=FALSE, fig.cap = "Univariate graphical analysis - Histograms",fig.pos='H', ,out.height="80%",fig.align='center'}
 
